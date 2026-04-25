@@ -149,7 +149,7 @@ const getSuppliers = async (req, res) => {
     const suppliers = await User.find({ role: 'supplier', isActive: true })
       .select('-passwordHash')
       .sort({ name: 1 });
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -170,9 +170,44 @@ const getSuppliers = async (req, res) => {
   }
 };
 
+// Update Profile
+const updateProfile = async (req, res) => {
+  try {
+    const { name, companyName, phone } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name, companyName, phone },
+      { new: true, runValidators: true }
+    ).select('-passwordHash');
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+          phone: user.phone,
+          isActive: user.isActive
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error updating profile'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
-  getSuppliers
+  getSuppliers,
+  updateProfile
 };

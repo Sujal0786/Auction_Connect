@@ -19,5 +19,10 @@ export const authApi = {
   getSuppliers: async () => {
     const response = await axios.get('/api/auth/suppliers');
     return response.data;
+  },
+
+  updateProfile: async (profileData) => {
+    const response = await axios.put('/api/auth/profile', profileData);
+    return response.data;
   }
 };

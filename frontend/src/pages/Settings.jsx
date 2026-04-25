@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { authApi } from '../api/auth';
 import { Menu, User, Bell, Shield, LogOut } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
@@ -10,18 +11,53 @@ import Sidebar from '../components/layout/Sidebar';
 
 const Settings = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const { success } = useToast();
+  const [formData, setFormData] = useState({
+    name: '',
+    companyName: '',
+    phone: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const { user, logout, setUser } = useAuth();
+  const { success, error } = useToast();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        companyName: user.companyName || '',
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    success('Profile updated successfully');
+    setLoading(true);
+
+    try {
+      const response = await authApi.updateProfile(formData);
+      if (response.success) {
+        setUser(response.data.user);
+        success('Profile updated successfully');
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
@@ -86,29 +122,34 @@ const Settings = () => {
                   <Input
                     label="Full Name"
                     name="name"
-                    defaultValue={user?.name}
+                    value={formData.name}
+                    onChange={handleChange}
                     placeholder="John Doe"
                   />
                   <Input
                     label="Email"
                     name="email"
-                    defaultValue={user?.email}
+                    value={user?.email}
                     disabled
                   />
                   <Input
                     label="Company Name"
                     name="companyName"
-                    defaultValue={user?.companyName}
+                    value={formData.companyName}
+                    onChange={handleChange}
                     placeholder="Acme Logistics"
                   />
                   <Input
                     label="Phone"
                     name="phone"
-                    defaultValue={user?.phone}
+                    value={formData.phone}
+                    onChange={handleChange}
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
               </form>
             </Card>
 
