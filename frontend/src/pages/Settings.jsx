@@ -41,12 +41,18 @@ const Settings = () => {
     setLoading(true);
 
     try {
+      console.log('Updating profile with data:', formData);
       const response = await authApi.updateProfile(formData);
+      console.log('Profile update response:', response);
       if (response.success) {
         setUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         success('Profile updated successfully');
+      } else {
+        error(response.message || 'Failed to update profile');
       }
     } catch (err) {
+      console.error('Profile update error:', err);
       error(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
