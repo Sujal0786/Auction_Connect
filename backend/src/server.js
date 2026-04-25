@@ -96,4 +96,5 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   });
 }
 
-module.exports = { app, server, io };
+// Export for Vercel
+module.exports = app;
