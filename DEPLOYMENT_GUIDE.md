@@ -69,6 +69,36 @@ The system consists of:
 mongodb+srv://rfq-admin:your-password@rfq-auction-db.xxxxx.mongodb.net/?retryWrites=true&w=majority
 ```
 
+### 1.5 Seed Demo Data (Optional)
+
+After setting up MongoDB Atlas, you can seed the database with demo data:
+
+1. Set your MongoDB connection string in `.env`:
+   ```
+   MONGODB_URI=mongodb+srv://rfq-admin:your-password@rfq-auction-db.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   ```
+
+2. Run the seed script:
+   ```bash
+   cd backend
+   npm run seed
+   ```
+
+This will create:
+- **5 Demo Users:**
+  - Buyer: `buyer@gocomet.test` / `123456`
+  - Supplier 1: `supplier1@gocomet.test` / `123456`
+  - Supplier 2: `supplier2@gocomet.test` / `123456`
+  - Supplier 3: `supplier3@gocomet.test` / `123456`
+  - Admin: `admin@gocomet.test` / `123456`
+
+- **2 Demo RFQs:**
+  - Active: Shanghai to Los Angeles Freight
+  - Upcoming: Mumbai to Dubai Logistics
+
+- **3 Demo Bids** for the active RFQ
+- **Activity Logs** for tracking
+
 ---
 
 ## Step 2: Prepare Backend for Vercel

@@ -61,6 +61,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API health check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    success: true, 
+    message: 'API is running' 
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
