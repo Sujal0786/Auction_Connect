@@ -5,18 +5,19 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { rfqApi } from '../api/rfq';
 import { bidApi } from '../api/bid';
-import { 
-  ArrowLeft, 
-  Clock, 
-  MapPin, 
-  Calendar, 
+import {
+  ArrowLeft,
+  Clock,
+  MapPin,
+  Calendar,
   DollarSign,
   Trophy,
   Activity,
   Settings,
   CheckCircle,
   Menu,
-  Users
+  Users,
+  XCircle
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
@@ -36,6 +37,9 @@ const AuctionDetails = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const { user } = useAuth();
   const { error, success } = useToast();
 
@@ -90,6 +94,26 @@ const AuctionDetails = () => {
       error(err.response?.data?.message || 'Failed to publish auction');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleCancelAuction = async () => {
+    if (!cancelReason.trim()) {
+      error('Please provide a reason for cancellation');
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      await rfqApi.cancel(id, cancelReason);
+      success('Auction cancelled successfully!');
+      setShowCancelDialog(false);
+      setCancelReason('');
+      fetchAuctionDetails();
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to cancel auction');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -151,6 +175,16 @@ const AuctionDetails = () => {
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Publish Auction
+                </Button>
+              )}
+              {(rfq.status === 'DRAFT' || rfq.status === 'UPCOMING' || rfq.status === 'ACTIVE') &&
+               (user?.role === 'buyer' || user?.role === 'admin') && (
+                <Button
+                  variant="danger"
+                  onClick={() => setShowCancelDialog(true)}
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel Auction
                 </Button>
               )}
               <StatusBadge status={rfq.status} />
@@ -346,6 +380,49 @@ const AuctionDetails = () => {
         </motion.div>
       </main>
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Cancel Auction</h3>
+            <p className="text-slate-600 mb-4">
+              Are you sure you want to cancel this auction? This action cannot be undone.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Reason for cancellation
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows="3"
+                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                placeholder="Please provide a reason..."
+                required
+              />
+            </div>
+            <div className="flex items-center justify-end space-x-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowCancelDialog(false);
+                  setCancelReason('');
+                }}
+              >
+                No, Keep It
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleCancelAuction}
+                loading={cancelling}
+              >
+                Yes, Cancel Auction
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
