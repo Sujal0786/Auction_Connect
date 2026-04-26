@@ -6,6 +6,12 @@ A production-quality, enterprise-grade SaaS procurement platform featuring Briti
 
 This platform enables buyers to create freight/service RFQs and suppliers to compete in British Auctions by continuously lowering quotes. The system handles live bidding, automatic auction extension, forced close, supplier ranking, audit logs, validations, and professional dashboards.
 
+## 🌟 **Live Demo & Deployment**
+
+- **🎨 Frontend**: [https://auction-connect.vercel.app/login](https://auction-connect.vercel.app/login)
+- **⚙️ Backend API**: [https://auction-connect.onrender.com](https://auction-connect.onrender.com)
+
+
 ## 🛠 Tech Stack
 
 ### Backend
