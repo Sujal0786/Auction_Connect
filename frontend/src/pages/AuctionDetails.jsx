@@ -177,7 +177,7 @@ const AuctionDetails = () => {
                   Publish Auction
                 </Button>
               )}
-              {(rfq.status === 'DRAFT' || rfq.status === 'UPCOMING' || rfq.status === 'ACTIVE') &&
+              {(rfq.status !== 'CLOSED' && rfq.status !== 'CANCELLED' && rfq.status !== 'FORCE_CLOSED') &&
                (user?.role === 'buyer' || user?.role === 'admin') && (
                 <Button
                   variant="danger"
