@@ -151,12 +151,12 @@ const Analytics = () => {
                             {bid.supplierId?.name || 'Unknown Supplier'} - {bid.rfqId?.referenceId || 'Unknown RFQ'}
                           </p>
                           <p className="text-sm text-slate-600">
-                            {bid.supplierId?.companyName || ''} • {new Date(bid.createdAt).toLocaleDateString()}
+                            {bid.supplierId?.companyName || ''} • {bid.createdAt ? new Date(bid.createdAt).toLocaleDateString() : ''}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-slate-900">
-                            ${bid.totalAmount?.toFixed(2)}
+                            ${bid.totalAmount?.toFixed(2) || '$0.00'}
                           </p>
                           <p className="text-sm text-slate-600">
                             {bid.transitTime ? `${bid.transitTime} days` : ''}

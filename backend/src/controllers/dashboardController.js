@@ -72,11 +72,13 @@ const getBuyerDashboard = async (req, res) => {
     // Calculate total savings (difference between estimated and actual)
     let totalSavings = 0;
     for (const rfq of rfqsWithStatus) {
-      if (rfq.estimatedValue && rfq.winnerSupplier && 
+      if (rfq.estimatedValue && rfq.winnerSupplier &&
           (rfq.status === RFQ_STATUS.CLOSED || rfq.status === RFQ_STATUS.FORCE_CLOSED)) {
-        const lowestBid = await Bid.findOne({ 
-          rfqId: rfq._id, 
-          supplierId: rfq.winnerSupplier._id 
+        // Handle both ObjectId and populated object cases
+        const winnerSupplierId = rfq.winnerSupplier._id ? rfq.winnerSupplier._id : rfq.winnerSupplier;
+        const lowestBid = await Bid.findOne({
+          rfqId: rfq._id,
+          supplierId: winnerSupplierId
         }).sort({ totalAmount: 1 });
         if (lowestBid) {
           totalSavings += rfq.estimatedValue - lowestBid.totalAmount;

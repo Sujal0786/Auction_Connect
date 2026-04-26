@@ -45,7 +45,11 @@ const auctionEngine = async (rfqId, supplierId, bidData, io) => {
   }
 
   // Validation 4: Check if supplier is invited or RFQ is PUBLIC
-  const isInvited = rfq.invitedSuppliers.some(s => s._id.toString() === supplierId.toString());
+  // Handle both ObjectId and populated object cases
+  const isInvited = rfq.invitedSuppliers.some(s => {
+    const supplierIdStr = s._id ? s._id.toString() : s.toString();
+    return supplierIdStr === supplierId.toString();
+  });
   const isPublic = rfq.visibility === 'PUBLIC';
   if (!isInvited && !isPublic) {
     throw new Error('You are not invited to this auction');
@@ -182,12 +186,19 @@ const auctionEngine = async (rfqId, supplierId, bidData, io) => {
   }
 
   if (l1Change.changed) {
+    // Get supplier name for the new L1
+    let newL1SupplierName = 'Unknown';
+    if (l1Change.newL1?.supplierId) {
+      const supplier = await require('../models/User').findById(l1Change.newL1.supplierId).select('name');
+      newL1SupplierName = supplier?.name || 'Unknown';
+    }
+
     await ActivityLog.create({
       rfqId,
       actorId: supplierId,
       actorRole: 'supplier',
       actionType: ACTION_TYPE.L1_CHANGED,
-      message: `L1 changed to ${l1Change.newL1?.supplierName || 'Unknown'}`,
+      message: `L1 changed to ${newL1SupplierName}`,
       metadata: {
         oldL1: l1Change.oldL1,
         newL1: l1Change.newL1
@@ -330,7 +341,10 @@ const getBidsForRFQ = async (req, res) => {
 
     // Access control
     if (user.role === 'supplier') {
-      const isInvited = rfq.invitedSuppliers.some(s => s._id.toString() === user._id.toString());
+      const isInvited = rfq.invitedSuppliers.some(s => {
+        const supplierIdStr = s._id ? s._id.toString() : s.toString();
+        return supplierIdStr === user._id.toString();
+      });
       const isPublic = rfq.visibility === 'PUBLIC';
       if (!isInvited && !isPublic) {
         return res.status(403).json({
@@ -338,6 +352,11 @@ const getBidsForRFQ = async (req, res) => {
           message: 'Access denied'
         });
       }
+    }
+
+    // Admin has explicit access to all bids
+    if (user.role === 'admin') {
+      // Admin can access any RFQ's bids
     }
 
     const bids = await Bid.find({ rfqId, isRejected: false })
@@ -379,7 +398,10 @@ const getRankings = async (req, res) => {
 
     // Access control
     if (user.role === 'supplier') {
-      const isInvited = rfq.invitedSuppliers.some(s => s._id.toString() === user._id.toString());
+      const isInvited = rfq.invitedSuppliers.some(s => {
+        const supplierIdStr = s._id ? s._id.toString() : s.toString();
+        return supplierIdStr === user._id.toString();
+      });
       const isPublic = rfq.visibility === 'PUBLIC';
       console.log('[RANKINGS API] Supplier access check - isInvited:', isInvited, 'isPublic:', isPublic);
       if (!isInvited && !isPublic) {

@@ -13,6 +13,7 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     companyName: '',
     phone: '',
     role: 'supplier'
@@ -31,18 +32,34 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      error('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      error('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
 
-    const result = await register(formData);
-    
-    if (result.success) {
-      success('Account created successfully! Welcome to the platform.');
-      navigate('/dashboard');
-    } else {
-      error(result.message);
+    try {
+      const result = await register(formData);
+
+      if (result.success) {
+        success('Account created successfully! Welcome to the platform.');
+        navigate('/dashboard');
+      } else {
+        error(result.message);
+      }
+    } catch (err) {
+      error('An error occurred during registration');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -107,15 +124,26 @@ const Register = () => {
               />
 
               <Input
-                label="Phone Number"
-                name="phone"
-                type="tel"
-                value={formData.phone}
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
                 onChange={handleChange}
-                icon={Phone}
-                placeholder="+1 (555) 000-0000"
+                icon={Lock}
+                placeholder="••••••••"
+                required
               />
             </div>
+
+            <Input
+              label="Phone Number"
+              name="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={handleChange}
+              icon={Phone}
+              placeholder="+1 (555) 000-0000"
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input

@@ -15,13 +15,22 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    
+
     if (token && storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
+        // Validate token with server
+        const response = await authApi.getMe();
+        if (response.success) {
+          setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          setIsAuthenticated(true);
+        } else {
+          // Token invalid, clear storage
+          logout();
+        }
       } catch (error) {
-        console.error('Error parsing stored user:', error);
+        console.error('Error validating token:', error);
+        // Token validation failed, clear storage
         logout();
       }
     }

@@ -187,6 +187,11 @@ const getRFQById = async (req, res) => {
       }
     }
 
+    // Admin has explicit access to all RFQs
+    if (user.role === 'admin') {
+      // Admin can access any RFQ
+    }
+
     // Get bid count and supplier count
     const bidCount = await Bid.countDocuments({ rfqId: rfq._id });
     const supplierCount = await Bid.distinct('supplierId', { rfqId: rfq._id }).then(ids => ids.length);
@@ -232,8 +237,9 @@ const updateRFQ = async (req, res) => {
       });
     }
 
-    // Cannot update if auction is active or closed
-    if (rfq.status === RFQ_STATUS.ACTIVE || rfq.status === RFQ_STATUS.CLOSED) {
+    // Cannot update if auction is active or closed (use dynamic status)
+    const currentStatus = getAuctionStatus(rfq.toObject());
+    if (currentStatus === RFQ_STATUS.ACTIVE || currentStatus === RFQ_STATUS.CLOSED) {
       return res.status(400).json({
         success: false,
         message: 'Cannot update RFQ in current status'
@@ -278,7 +284,9 @@ const cancelRFQ = async (req, res) => {
       });
     }
 
-    if (rfq.status === RFQ_STATUS.CLOSED || rfq.status === RFQ_STATUS.CANCELLED) {
+    // Cannot cancel if already closed or cancelled (use dynamic status)
+    const currentStatus = getAuctionStatus(rfq.toObject());
+    if (currentStatus === RFQ_STATUS.CLOSED || currentStatus === RFQ_STATUS.CANCELLED) {
       return res.status(400).json({
         success: false,
         message: 'Cannot cancel RFQ in current status'
@@ -323,7 +331,9 @@ const selectWinner = async (req, res) => {
       });
     }
 
-    if (rfq.status !== RFQ_STATUS.CLOSED && rfq.status !== RFQ_STATUS.FORCE_CLOSED) {
+    // Can only select winner for closed auctions (use dynamic status)
+    const currentStatus = getAuctionStatus(rfq.toObject());
+    if (currentStatus !== RFQ_STATUS.CLOSED && currentStatus !== RFQ_STATUS.FORCE_CLOSED) {
       return res.status(400).json({
         success: false,
         message: 'Can only select winner for closed auctions'
