@@ -123,14 +123,20 @@ const getAllRFQs = async (req, res) => {
       .populate('winnerSupplier', 'name email companyName')
       .sort({ createdAt: -1 });
 
-    // Calculate dynamic status for each RFQ
-    const rfqsWithStatus = rfqs.map(rfq => {
+    // Calculate dynamic status for each RFQ and get lowest bid
+    const rfqsWithStatus = await Promise.all(rfqs.map(async (rfq) => {
       const rfqObj = rfq.toObject();
       rfqObj.status = getAuctionStatus(rfqObj);
       // Ensure _id is included as a string
       rfqObj._id = rfq._id.toString();
+
+      // Get lowest bid for this RFQ
+      const lowestBid = await Bid.findOne({ rfqId: rfq._id, isRejected: false })
+        .sort({ totalAmount: 1 });
+      rfqObj.lowestBid = lowestBid ? lowestBid.totalAmount : null;
+
       return rfqObj;
-    });
+    }));
 
     // Apply status filter if provided (after dynamic calculation)
     let filteredRFQs = rfqsWithStatus;

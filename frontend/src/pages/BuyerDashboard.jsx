@@ -5,15 +5,19 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { dashboardApi } from '../api/dashboard';
 import { rfqApi } from '../api/rfq';
-import { 
-  FileText, 
-  Plus, 
-  TrendingUp, 
-  Clock, 
-  DollarSign, 
+import {
+  FileText,
+  Plus,
+  TrendingUp,
+  Clock,
+  DollarSign,
   CheckCircle,
   ArrowRight,
-  Menu
+  Menu,
+  Search,
+  Filter,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import StatsCard from '../components/layout/StatsCard';
 import Card from '../components/common/Card';
@@ -26,6 +30,11 @@ const BuyerDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [rfqs, setRfqs] = useState([]);
+  const [filteredRfqs, setFilteredRfqs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
   const { error } = useToast();
@@ -34,6 +43,47 @@ const BuyerDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    // Apply search, filter, and sort
+    let result = [...rfqs];
+
+    // Search
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(rfq =>
+        rfq.rfqName?.toLowerCase().includes(term) ||
+        rfq.referenceId?.toLowerCase().includes(term)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(rfq => rfq.status === statusFilter);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (sortBy === 'lowestBid') {
+        aVal = aVal || Infinity;
+        bVal = bVal || Infinity;
+      } else if (sortBy === 'createdAt' || sortBy === 'currentCloseTime' || sortBy === 'forcedCloseTime') {
+        aVal = new Date(aVal).getTime();
+        bVal = new Date(bVal).getTime();
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    setFilteredRfqs(result);
+  }, [rfqs, searchTerm, statusFilter, sortBy, sortOrder]);
 
   const fetchDashboardData = async () => {
     try {
@@ -58,15 +108,25 @@ const BuyerDashboard = () => {
   const columns = [
     { header: 'Reference ID', key: 'referenceId' },
     { header: 'RFQ Name', key: 'rfqName' },
-    { 
-      header: 'Status', 
+    {
+      header: 'Status',
       key: 'status',
       render: (status) => <StatusBadge status={status} />
     },
-    { 
-      header: 'Close Time', 
+    {
+      header: 'Lowest Bid',
+      key: 'lowestBid',
+      render: (bid) => bid ? `$${bid.toFixed(2)}` : 'No bids'
+    },
+    {
+      header: 'Close Time',
       key: 'currentCloseTime',
       render: (time) => new Date(time).toLocaleDateString()
+    },
+    {
+      header: 'Forced Close',
+      key: 'forcedCloseTime',
+      render: (time) => time ? new Date(time).toLocaleDateString() : 'N/A'
     },
     {
       header: 'Actions',
@@ -199,9 +259,53 @@ const BuyerDashboard = () => {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
+
+            {/* Search, Filter, Sort Controls */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search RFQ name or reference..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="all">All Statuses</option>
+                <option value="DRAFT">Draft</option>
+                <option value="UPCOMING">Upcoming</option>
+                <option value="ACTIVE">Active</option>
+                <option value="CLOSED">Closed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="createdAt">Sort by Date</option>
+                <option value="rfqName">Sort by Name</option>
+                <option value="lowestBid">Sort by Lowest Bid</option>
+                <option value="currentCloseTime">Sort by Close Time</option>
+              </select>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+              </Button>
+            </div>
+
             <Table
               columns={columns}
-              data={rfqs.slice(0, 5)}
+              data={filteredRfqs.slice(0, 5)}
               emptyMessage="No RFQs created yet"
             />
           </Card>
