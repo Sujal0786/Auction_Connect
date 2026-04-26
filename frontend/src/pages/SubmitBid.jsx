@@ -196,9 +196,24 @@ const SubmitBid = () => {
                   <p className="text-slate-600">Close Time</p>
                   <p className="font-medium">{new Date(rfq.currentCloseTime).toLocaleString()}</p>
                 </div>
+                {rfq.estimatedValue && (
+                  <div>
+                    <p className="text-slate-600">Estimated Value</p>
+                    <p className="font-medium">${rfq.estimatedValue?.toFixed(2)}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+          {rfq.lowestBid && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-2 text-blue-800">
+                <TrendingDown className="w-5 h-5" />
+                <span className="font-medium">Current Lowest Bid: ${rfq.lowestBid?.toFixed(2)}</span>
+              </div>
+              <p className="text-sm text-blue-700 mt-1">You need to bid lower than this to become L1</p>
+            </div>
+          )}
           {myPreviousBid && (
             <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center space-x-2 text-yellow-800">

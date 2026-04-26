@@ -202,11 +202,17 @@ const getRFQById = async (req, res) => {
     const bidCount = await Bid.countDocuments({ rfqId: rfq._id });
     const supplierCount = await Bid.distinct('supplierId', { rfqId: rfq._id }).then(ids => ids.length);
 
+    // Get lowest bid for this RFQ
+    const lowestBid = await Bid.findOne({ rfqId: rfq._id, isRejected: false })
+      .sort({ totalAmount: 1 });
+
     // Calculate dynamic status
     const rfqObj = rfq.toObject();
     rfqObj.status = getAuctionStatus(rfqObj);
     rfqObj.bidCount = bidCount;
     rfqObj.supplierCount = supplierCount;
+    rfqObj.lowestBid = lowestBid ? lowestBid.totalAmount : null;
+    rfqObj.lowestBidSupplier = lowestBid ? lowestBid.supplierId : null;
 
     res.status(200).json({
       success: true,
